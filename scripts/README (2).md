@@ -21,9 +21,10 @@ project/
 │   ├── 02_dc_demand_analysis.py     # Data centre demand profiling
 │   ├── 03_combined_analysis.py      # Curtailment ↔ DC matching + fluctuation analysis
 │   ├── 04_optimization.py           # LP-based constrained optimisation
-│   └── 05_financial_analysis.py     # Financial impact (region-filtered)
+│   ├── 05_financial_analysis.py     # Financial impact (region-filtered)   
+│   └── 06_dc_operations.py          # Final operational case-study
 ├── output/
-│   ├── charts/                      # All PNG charts (01_*, 02_*, …, 05_*)
+│   ├── charts/                      # All PNG charts (01_*, 02_*, …, 06_*)
 │   └── csv/                         # Summary tables and time series
 └── README.md
 ```
@@ -39,6 +40,7 @@ python scripts/02_dc_demand_analysis.py      # → data/processed/dc_*.csv
 python scripts/03_combined_analysis.py       # → output/csv/absorption_summary.csv + charts
 python scripts/04_optimization.py            # → output/csv/04_summary_results.csv + charts
 python scripts/05_financial_analysis.py      # → output/csv/05_financial_summary.csv + charts
+python scripts/06_dc_operations.py           # → output/csv/06_operations_summary.csv + charts
 ```
 
 ## Dependencies
@@ -54,49 +56,75 @@ Install: `pip install pandas numpy matplotlib scipy`
 
 ## Scripts Overview
 
-### 01 — Curtailment Analysis
-Loads and combines the two BOA datasets (2024-25 and 2025-26), handles DST
-clock-change days, and produces:
-- Monthly/hourly/daily curtailment totals
-- Top 15 most curtailed wind farms
-- Power-level distribution with DC threshold markers
+01 — Curtailment Analysis
+Loads and combines the two BOA datasets (2024-25 and 2025-26), handles DST clock-change days, and produces:
 
-### 02 — DC Demand Profiling
-Processes UKPN data centre utilisation profiles (or generates synthetic
-profiles if UKPN data unavailable):
-- Hourly utilisation and headroom by DC type and voltage level
-- Month × hour seasonal heatmap
-- Date alignment check with BOA window
+Monthly/hourly/daily curtailment totals
+Top 15 most curtailed wind farms
+Power-level distribution with DC threshold markers
 
-### 03 — Combined Matching Analysis
+02 — DC Demand Profiling
+Processes UKPN data centre utilisation profiles (or generates synthetic profiles if UKPN data unavailable):
+
+Hourly utilisation and headroom by DC type and voltage level
+Month × hour seasonal heatmap
+Date alignment check with BOA window
+
+03 — Combined Matching Analysis
 Two-part analysis:
-- **Part A**: Profile-based scenario modelling (fleet size × flex fraction)
-- **Part B**: Real half-hourly time series matching (if UKPN data available),
-  capturing within-day volatility that hourly averages smooth out
 
-### 04 — Constrained Optimisation
-Per-day linear programme (LP) that maximises absorbed curtailment under
-operational constraints (deliverability, ramp rate, backlog budget).
-Produces a "constraint waterfall" showing how each real-world limit
-reduces achievable absorption from the ideal case.
+Part A: Profile-based scenario modelling (fleet size × flex fraction)
+Part B: Real half-hourly time series matching (if UKPN data available), capturing within-day volatility that hourly averages smooth out
 
-Optional farm-group analysis can be enabled by setting `FARM_GROUP` in
-the script config (no interactive input required).
+04 — Constrained Optimisation
+Per-day linear programme (LP) that maximises absorbed curtailment under operational constraints (deliverability, ramp rate, backlog budget). Produces a "constraint waterfall" showing how each real-world limit reduces achievable absorption from the ideal case.
 
-### 05 — Financial Impact Analysis
-Region-filtered financial analysis with partial name matching (e.g.
-`REGION = "Seagreen"` captures Seagreen 1–6). Computes:
-- Curtailment value in £ (using IMRP prices or reference wholesale price)
-- Region share of UK-wide curtailment
-- DC absorption potential valued in £
-- Fleet sizing sensitivity (MW → £ absorption value)
+Optional farm-group analysis can be enabled by setting FARM_GROUP in the script config (no interactive input required).
+
+05 — Financial Impact Analysis
+Region-filtered financial analysis with partial name matching (e.g. REGION = "Seagreen" captures Seagreen 1–6). Computes:
+
+Curtailment value in £ (using IMRP prices or reference wholesale price)
+Region share of UK-wide curtailment
+DC absorption potential valued in £
+Fleet sizing sensitivity (MW → £ absorption value)
 
 Supports optional pricing datasets (loaded automatically if present):
-- `imrp_actuals.csv` — half-hourly settlement prices
-- `q*_vol_*.csv` — NESO balancing volumes
-- `q*_cost_*.csv` — NESO balancing costs
-- `BS_NETBSD_*.csv` — Net BSAD (auto-cleans messy headers)
-- `actual_cfd_generation_*.csv` — LCCC CfD payments (daily context)
+
+imrp_actuals.csv — half-hourly settlement prices
+q*_vol_*.csv — NESO balancing volumes
+q*_cost_*.csv — NESO balancing costs
+BS_NETBSD_*.csv — Net BSAD (auto-cleans messy headers)
+actual_cfd_generation_*.csv — LCCC CfD payments (daily context)
+
+06 — Data Centre Operational Model
+Final operational case study. Builds a half-hourly model of a co-located data centre using regional wind curtailment, UKPN-based demand profiles, flexible workload scheduling, and electricity price assumptions. This is the main end-to-end model used to show what data centre operation actually looks like under wind co-location.
+
+Computes:
+
+Total DC demand profile (base load + normal scheduled load + shiftable load)
+Energy sourced from curtailed wind vs grid electricity
+Residual grid dependency after curtailment absorption
+Price-responsive scheduling of flexible compute workloads
+Cost comparison between co-located operation and a grid-only counterfactual
+Operational savings from consuming curtailed wind
+
+Uses:
+
+curtailment_processed.csv — wind farm-level curtailment events from 01
+curtailment_per_period.csv — half-hourly curtailment totals from 01
+dc_hourly_profile_matched.csv — UKPN-based hourly demand profile from 02
+imrp_actuals.csv — optional half-hourly settlement prices if available
+
+Default case:
+
+REGION = "Seagreen"
+DC capacity = 500 MW
+Base load = 55%
+Maximum load = 95%
+Shiftable fraction = 50% of flexible load
+Curtailed wind price = £20/MWh
+Reference grid price = £80/MWh
 
 ## Key Findings
 
