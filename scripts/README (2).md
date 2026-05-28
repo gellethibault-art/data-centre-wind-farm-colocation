@@ -56,32 +56,32 @@ Install: `pip install pandas numpy matplotlib scipy`
 
 ## Scripts Overview
 
-01 — Curtailment Analysis
+### 01 — Curtailment Analysis
 Loads and combines the two BOA datasets (2024-25 and 2025-26), handles DST clock-change days, and produces:
 
 Monthly/hourly/daily curtailment totals
 Top 15 most curtailed wind farms
 Power-level distribution with DC threshold markers
 
-02 — DC Demand Profiling
+### 02 — DC Demand Profiling
 Processes UKPN data centre utilisation profiles (or generates synthetic profiles if UKPN data unavailable):
 
 Hourly utilisation and headroom by DC type and voltage level
 Month × hour seasonal heatmap
 Date alignment check with BOA window
 
-03 — Combined Matching Analysis
+### 03 — Combined Matching Analysis
 Two-part analysis:
 
 Part A: Profile-based scenario modelling (fleet size × flex fraction)
 Part B: Real half-hourly time series matching (if UKPN data available), capturing within-day volatility that hourly averages smooth out
 
-04 — Constrained Optimisation
+### 04 — Constrained Optimisation
 Per-day linear programme (LP) that maximises absorbed curtailment under operational constraints (deliverability, ramp rate, backlog budget). Produces a "constraint waterfall" showing how each real-world limit reduces achievable absorption from the ideal case.
 
 Optional farm-group analysis can be enabled by setting FARM_GROUP in the script config (no interactive input required).
 
-05 — Financial Impact Analysis
+### 05 — Financial Impact Analysis
 Region-filtered financial analysis with partial name matching (e.g. REGION = "Seagreen" captures Seagreen 1–6). Computes:
 
 Curtailment value in £ (using IMRP prices or reference wholesale price)
@@ -97,7 +97,7 @@ q*_cost_*.csv — NESO balancing costs
 BS_NETBSD_*.csv — Net BSAD (auto-cleans messy headers)
 actual_cfd_generation_*.csv — LCCC CfD payments (daily context)
 
-06 — Data Centre Operational Model
+### 06 — Data Centre Operational Model
 Final operational case study. Builds a half-hourly model of a co-located data centre using regional wind curtailment, UKPN-based demand profiles, flexible workload scheduling, and electricity price assumptions. This is the main end-to-end model used to show what data centre operation actually looks like under wind co-location.
 
 Computes:
